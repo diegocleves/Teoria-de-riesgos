@@ -1,1 +1,1 @@
-Este proyecto se realizó durante la asignatura de riesgo financiero. El objetivo fue mantener inversiones en Ecopetrol sin incurrir en pérdidas y reducir la volatilidad.
+Este proyecto se realizó durante la asignatura de riesgo financiero. El objetivo fue mantener acciones de Ecopetrol sin incurrir en pérdidas y reducir la volatilidad. El reto radicaba en lidiar con la situación crítica que atravesaba la empresa en aquel momento.  
