@@ -1,0 +1,448 @@
+!pip install streamlit-folium
+!pip install geopy
+!pip install streamlit pyngrok
+!pip install ngrok
+!pip install streamlit
+!pip install streamlit-aggrid
+!pip install streamlit requests pillow
+# @title Corra esta celda y abra el link que se genera (luce así : "https://af160c458f12.ngrok-free.app", por ejemplo)
+streamlit_code = """
+import streamlit as st
+import pandas as pd
+import yfinance as yf
+import plotly.graph_objects as go
+import numpy as np
+
+# Logo or image in the sidebar
+st.sidebar.image(
+    "https://revistaartefacto.usta.edu.co/images/LOGO-USTA-2021-Ng.png",
+    use_container_width=False
+)
+
+# Custom styles (optional)
+st.markdown(
+    '''
+    <style>
+    .reportview-container {
+        background-color: #f0f2f6;
+    }
+    .sidebar .sidebar-content {
+        background-color: #1e2a47;
+        color: #ffffff;
+    }
+    .main .block-container {
+        padding: 2rem;
+        background-color: #ffffff;
+    }
+    </style>
+    ''',
+    unsafe_allow_html=True
+)
+
+# Sidebar menu
+secciones = [
+    "Presentación",
+    "Estado del Arte",
+    "Contexto",
+    "Metodología",
+    "Objetivos del proyecto",
+    "Estadística exploratoria y descriptiva",
+    "Retornos logarítmicos",
+    "Portafolios óptimos",
+    "Medidas de calidad y selección del portafolio",
+    "Referencias",
+    "Anexo: explicación de las medidas de calidad"
+]
+
+st.title("Evaluación y mitigación del riesgo de mercado de un portafolio con acciones de Ecopetrol")
+seccion_seleccionada = st.sidebar.radio("Selecciona una sección", secciones)
+# Secciones básicas
+if seccion_seleccionada == "Presentación":
+    st.markdown('<h3 style="text-align: center;">Presentado por:</h3>', unsafe_allow_html=True)
+    integrantes = [
+        "Paula Andrea Betancour",
+        "Diego Andrés Cleves",
+        "Lina Alejandra Fierro"
+    ]
+    lista_html = "<div style='text-align:center;'>"
+    for obj in integrantes:
+        lista_html += f"<p>{obj}</p>"
+    lista_html += "</div>"
+    st.markdown(lista_html, unsafe_allow_html=True)
+elif seccion_seleccionada == "Contexto":
+    st.header("Contexto")
+    st.markdown("La optimización de portafolios puede ser una herramienta para la protección del patrimonio de un Estado, ya que parte de este -aunque muchas veces se ignore- también son las empresas públicas y de capital mixto que lo conforman. Colombia no es ajena a este fenómeno, ya que entre sus empresas se encuentra Ecopetrol S.A., considerada la empresa más grande de Colombia, de acuerdo a sus ingresos (La Republica, 2025). No obstante, esta empresa no atraviesa su mejor momento, lo que se ve reflejado en el comportamiento bajista de sus acciones, tanto en la Bolsa de Valores de Colombia (BVC) como en la bolsa de Nueva York.")
+    ecopetrol_col=yf.download("ECOPETROL.CL", start="2020-08-10", end="2025-11-14", interval="1d")#ecopetrol_col
+    ecopetrol=yf.download("EC", start="2020-08-10", end="2025-11-14", interval="1d")#ecopetro_ny
+    ecopetrol_col.columns = ecopetrol_col.columns.droplevel(1)
+    ecopetrol.columns = ecopetrol.columns.droplevel(1)
+    fig = go.Figure(data=[go.Scatter(x=ecopetrol.index, y=ecopetrol['Close'], mode='lines')])
+    fig.update_layout(title='Precios activos de Ecopetrol(NYSE)', xaxis_title='Día', yaxis_title='Precio cierre')
+    st.plotly_chart(fig)
+    fig_2 = go.Figure(data=[go.Scatter(x=ecopetrol_col.index, y=ecopetrol_col['Close'], mode='lines')])
+    fig_2.update_layout(title='Precios activos de Ecopetrol(BVC)', xaxis_title='Día', yaxis_title='Precio cierre')
+    st.plotly_chart(fig_2)
+elif seccion_seleccionada == "Estado del Arte":
+    st.header("Estado del Arte")
+    st.markdown("La mayoría de los elementos aplicados en este proyecto no constituyen desarrollos propios, sino que son el resultado de investigaciones previas que también propusieron estudios de caso. Estos trabajos resultaron especialmente útiles, no tanto por los portafolios construidos, sino por las metodologías empleadas. En reconocimiento a sus aportes, a continuación se presentan los resúmenes de dichas investigaciones. Esperamos que, así como fueron valiosas para nuestro trabajo, también puedan serlo para los apreciados lectores.")
+    st.markdown("Instrucciones de uso: oprima el nombre del autor o autora y se desplegará el resumen de su artículo.")
+    with st.expander("Ospina Arango (2019) — Riesgo de mercado en portafolios de renta fija"):
+      st.markdown("Desarrolla un estudio titulado \textit{Medición del Riesgo de Mercado para un Portafolio de Renta Fija del Mercado Colombiano}, enfocado en portafolios compuestos por títulos de deuda pública (TES). Utiliza tres metodologías para calcular el Valor en Riesgo (VaR): el método paramétrico, la simulación histórica y Montecarlo con movimiento browniano (Wiener). A partir de la comparación, concluye que los enfoques no paramétricos y el método de Montecarlo capturan mejor el riesgo real del portafolio. Además, evidencia una relación inversa entre las tasas de interés y los precios de los títulos.")
+
+    with st.expander("Suaza González (2015) — Valor en Riesgo para Diversificación Internacional de Portafolios"):
+      st.markdown("Analiza cómo la diversificación geográfica puede reducir el riesgo financiero. Para ello, aplica el cálculo del VaR utilizando enfoques paramétricos, no paramétricos y simulaciones de Monte Carlo, complementado con la frontera eficiente de Markowitz. Sus resultados muestran que la inclusión de ETF internacionales disminuye tanto la volatilidad como el VaR de los portafolios, confirmando los beneficios de la diversificación global.")
+
+    with st.expander("García Rodríguez (2015) — Mecanismos de Cobertura Cambiaria en el Mercado Colombiano"):
+      st.markdown("Aborda el uso de derivados financieros para gestionar la exposición al riesgo cambiario. A través del análisis de escenarios con instrumentos como forwards, futuros y opciones, concluye que el contrato forward es el mecanismo más eficiente y económico. Además, demuestra que las coberturas permiten estabilizar los flujos financieros y reducir la vulnerabilidad frente a la volatilidad cambiaria.")
+
+    with st.expander("Alarcón, Alvarado & Arcos (2023) — Análisis financiero y bursátil de Ecopetrol"):
+      st.markdown("Centrado en el desempeño de la compañía entre 2020 y 2022, el estudio utiliza razones financieras como ROA, ROE, WACC, PER, EBITDA y descomposición DuPont, además de un análisis del sector energético. Se concluye que Ecopetrol conserva solidez y liderazgo en el mercado; sin embargo, su rentabilidad depende en gran medida de los precios internacionales del crudo y de las condiciones macroeconómicas.")
+
+    with st.expander("Lopera, González & Londoño (2013) — Efectos de la política monetaria sobre la valoración de activos en el mercado accionario colombiano (2004--2012)"):
+      st.markdown("Examinan la relación entre la tasa interbancaria (TIB) y el índice accionario IGBC. Emplean un modelo VARX-MGARCH en media para estudiar las interacciones entre ambas variables. Los autores concluyen que los movimientos en la tasa interbancaria impactan de forma significativa los precios de los activos financieros, mientras que el mercado accionario no ejerce influencia sobre la política monetaria.")
+
+    with st.expander("Giraldo-Prieto et al. (2017) — Coberturas financieras con derivados y su incidencia en el valor de mercado en empresas colombianas que cotizan en Bolsa"):
+      st.markdown("Investigan cómo el uso de instrumentos derivados puede afectar la valoración empresarial. Utilizan un análisis econométrico con el indicador Tobin’s Q para evaluar empresas que recurren a swaps, forwards y opciones. Los hallazgos evidencian que las compañías que emplean coberturas presentan un mayor valor de mercado, lo que sugiere que el uso de derivados contribuye a la creación de valor y a la reducción del riesgo financiero.")
+
+    with st.expander("Harmstone (2017) — Political Risk: A Tale of Two Cities"):
+      st.markdown("Analiza el comportamiento de las primas de riesgo durante la crisis financiera de 2008, destacando las diferencias entre mercados y activos. Se atribuye el aumento de los spreads principalmente al deterioro de las expectativas, la iliquidez y el incremento en la aversión al riesgo. El estudio compara datos entre segmentos financieros para mostrar cómo factores macroeconómicos y percepciones de solvencia incidieron en la ampliación de los diferenciales.")
+
+    with st.expander("Araham & Saeigh (2021) — Political shocks and asset prices"):
+      st.markdown("Examinan la interacción entre mercados financieros y choques de riesgo, utilizando evidencia empírica para comparar comportamientos entre regiones. Se señalan elementos como la transmisión del riesgo, el rol de los derivados y la respuesta de los inversionistas ante eventos de alta incertidumbre. Además, se enfatiza cómo el entorno financiero global condiciona las correlaciones y la magnitud de las primas exigidas por los agentes económicos.")
+
+elif seccion_seleccionada == "Metodología":
+    st.header("Metodología")
+    objetivos = [
+        "Paso 1: realizar un análisis descriptivo y exploratorio de los datos",
+        "Paso 2: calcular los retornos logarítmicos",
+        "Paso 3: optimización de portafolios, por medio de la metodología Markowitz con matriz de covarianza con mínima determinante y con matriz de covarianza estándar",
+        "Paso 4: cálculo del retorno y la varianza del portafolio",
+        "Paso 5: cálculo del valor en riesgo (VaR) mediante Bootstrap",
+        "Paso 6: cálculo de medidas de calidad",
+        "Paso 7: elección del portafolio"
+    ]
+    for obj in objetivos:
+        st.markdown(f"- {obj}")
+
+elif seccion_seleccionada == "Objetivos del proyecto":
+    st.header("Objetivo General")
+    st.markdown("Por medio de un estudio de caso basado en la situación actual de Ecopetrol S.A., diseñar una metodolgía de optimización de portafolios, que permita mitigar los efectos de la percepción negativa de un gobierno y, en consecuencia, invertir parte de los montos en empresas públicas de forma segura, sin tener que vender en corto.")
+    st.header("Objetivos Específicos")
+    objetivos = [
+        "Identificar el comportamiento histórico de las acciones de Ecopetrol y de una serie de activos complementarios —incluyendo activos inversamente correlacionados (como derivados), acciones internacionales e índices bursátiles— con el fin de analizar su potencial como instrumentos de diversificación y mitigación de riesgo dentro del portafolio.",
+        "Estimar las medidas de riesgo (desviación estándar, covarianza, correlación y valor en riesgo (VaR) mediante técnicas paramétricas o no paramétricas, según lo demande cada caso particular.",
+        "Comparar los rendimientos, la volatilidad y valor en riesgo de distintos portafolios, construidos por medio de la metodología Markowitz, recurriendo a la matriz de covarianza estándar y a la  matriz de covarianza con mínima determinante.",
+        "Evaluar la calidad de los portafolios construidos por medio de indicadores como el ratio de sortino, el beta del portafolio y el alfa de Jensen."
+    ]
+    for obj in objetivos:
+        st.markdown(f"- {obj}")
+elif seccion_seleccionada == "Estadística exploratoria y descriptiva":
+    st.header("Estadística exploratoria y descriptiva")
+    df = pd.DataFrame({
+    "Activos": ["Alphabet", "Nutresa", "ASML", "Ecopetrol", "B. de carbono", "PDD"],
+    "Datos faltantes": [50, 17, 50, 50, 50, 50],
+    "Media": [0.0010, 0.0020, 0.0008, 0.0003, 0.0005, 0.0003],
+    "Varianza": [0.0004, 0.0012, 0.0007, 0.0005, 0.0001, 0.0020],
+    "Desv. Std": [0.0194, 0.0346, 0.0259, 0.0233, 0.0101, 0.0442],
+    "Mín": [-0.1013, -0.3390, -0.1775, -0.1161, -0.0616, -0.3355],
+    "Máx": [0.0950, 0.4499, 0.1435, 0.0988, 0.0845, 0.4451],
+    "Tipo":["Numérico", "Numérico","Numérico", "Numérico", "Numérico","Numérico"]})
+    df = df.set_index("Activos")
+    st.table(df)
+    with st.expander("Sobre los datos faltantes"):
+      st.markdown("En la casilla 'datos faltantes' están registrados los días no bursátiles; además, se observa que Nutresa registra menos que los demás, esto se debe a que esta opera en la BVC no en la NYSE y que en Yahoo Finance no se registran todos los días no bursátiles de Colombia.")
+    def corregir_columnas(activos):
+      for x in range(len(activos)):
+        activos[x].columns = activos[x].columns.droplevel(1)
+      return activos
+    asml = yf.download("ASML", start="2020-08-10", end="2025-11-14", interval="1d")  # ASML
+    pdd = yf.download("PDD", start="2020-08-10", end="2025-11-14", interval="1d")  # PDD Holdings
+    nutresa = yf.download("NUTRESA.CL", start="2020-08-10", end="2025-11-14", interval="1d")  # Grupo Nutresa
+    google = yf.download("GOOG", start="2020-08-10", end="2025-11-14", interval="1d")  # Alphabet (Google)
+    ecopetrol_col = yf.download("ECOPETROL.CL", start="2020-08-10", end="2025-11-14", interval="1d")  # Ecopetrol Colombia
+    ecopetrol = yf.download("EC", start="2020-08-10", end="2025-11-14", interval="1d")  # Ecopetrol NYSE
+    carbono = yf.download("CRBN", start="2020-08-10", end="2025-11-14", interval="1d")  # iShares MSCI ACWI Low Carbon Target ETF
+    activos= [asml,pdd,nutresa,google,ecopetrol,carbono]
+    activos=corregir_columnas(activos)
+    retornos = pd.DataFrame({'ASML':asml['Close'],'PDD':pdd['Close'],
+    'Nutresa':nutresa['Close'],'google':google['Close'],
+    'ecopetrol':ecopetrol['Close'],'carbono':carbono['Close']})
+    st.subheader("Ejemplo: precios de cierre de los activos")
+    criterio = st.radio(
+      "Selecciona el activo financiero:",
+      ["ASML", "PDD", "Nutresa", "Alphabet","Ecopetrol","B. de carbono"],
+      horizontal=True)
+
+    # --- Crear figura con TODAS las métricas ---
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.ASML, name='ASML', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.PDD, name='PDD', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.Nutresa, name='Nutresa', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.google, name='Alphabet', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.ecopetrol, name='Ecopetrol', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.carbono, name='B. de carbono', visible=False))
+
+    # --- Control de visibilidad según la selección del radio ---
+    if criterio == "ASML":
+      fig.data[0].visible = True
+    elif criterio == "PDD":
+      fig.data[1].visible = True
+    elif criterio == "Nutresa":
+      fig.data[2].visible = True
+    elif criterio == "Alphabet":
+      fig.data[3].visible = True
+    elif criterio == "Ecopetrol":
+      fig.data[4].visible = True
+    elif criterio == "B. de carbono":
+      fig.data[5].visible = True
+
+    # --- Layout general ---
+    fig.update_layout(
+    title=f"Activo seleccionado: {criterio}",
+    xaxis_title="Día",
+    yaxis_title="Precio de cierre",
+    barmode="group",
+    height=500)
+
+    # --- Mostrar ---
+    st.plotly_chart(fig, use_container_width=True)
+
+elif seccion_seleccionada == "Retornos logarítmicos":
+    st.header("Retornos logarítmicos")
+    st.subheader("¿Qué son?")
+    st.markdown("Forma de medir la rentabilidad de un activo financiero usando el logaritmo natural de la relación entre el precio de fin de período y el precio de inicio de período.")
+    st.subheader("¿Por qué usarlos?")
+    st.markdown("Los retornos logarítmicos son aditivos en el tiempo, lo que facilita su uso en análisis y modelización.")
+    st.subheader("¿Cómo se calculan?")
+    st.markdown("$R_{t}=ln(P_{t}/P_{t-1})$")
+    st.subheader("Ejemplo: retorno logarítmico de los activos")
+    def corregir_columnas(activos):
+      for x in range(len(activos)):
+        activos[x].columns = activos[x].columns.droplevel(1)
+      return activos
+    def retorno_logaritmico(activos):
+      for activo in activos:
+        activo['Return_log'] = np.log(activo['Close'] / activo['Close'].shift(1))
+      return activos
+    asml = yf.download("ASML", start="2020-08-10", end="2025-11-14", interval="1d")  # ASML
+    pdd = yf.download("PDD", start="2020-08-10", end="2025-11-14", interval="1d")  # PDD Holdings
+    nutresa = yf.download("NUTRESA.CL", start="2020-08-10", end="2025-11-14", interval="1d")  # Grupo Nutresa
+    google = yf.download("GOOG", start="2020-08-10", end="2025-11-14", interval="1d")  # Alphabet (Google)
+    ecopetrol_col = yf.download("ECOPETROL.CL", start="2020-08-10", end="2025-11-14", interval="1d")  # Ecopetrol Colombia
+    ecopetrol = yf.download("EC", start="2020-08-10", end="2025-11-14", interval="1d")  # Ecopetrol NYSE
+    carbono = yf.download("CRBN", start="2020-08-10", end="2025-11-14", interval="1d")  # iShares MSCI ACWI Low Carbon Target ETF
+    activos= [asml,pdd,nutresa,google,ecopetrol,carbono]
+    activos=corregir_columnas(activos)
+    activos=retorno_logaritmico(activos)
+    retornos = pd.DataFrame({'ASML':asml['Return_log'],'PDD':pdd['Return_log'],
+    'Nutresa':nutresa['Return_log'],'google':google['Return_log'],
+    'ecopetrol':ecopetrol['Return_log'],'carbono':carbono['Return_log']})
+    criterio = st.radio(
+      "Selecciona el activo financiero:",
+      ["ASML", "PDD", "Nutresa", "Alphabet","Ecopetrol","B. de carbono"],
+      horizontal=True)
+
+    # --- Crear figura con TODAS las métricas ---
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.ASML, name='ASML', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.PDD, name='PDD', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.Nutresa, name='Nutresa', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.google, name='Alphabet', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.ecopetrol, name='Ecopetrol', visible=False))
+    fig.add_trace(go.Bar(x=retornos.index, y=retornos.carbono, name='B. de carbono', visible=False))
+
+    # --- Control de visibilidad según la selección del radio ---
+    if criterio == "ASML":
+      fig.data[0].visible = True
+    elif criterio == "PDD":
+      fig.data[1].visible = True
+    elif criterio == "Nutresa":
+      fig.data[2].visible = True
+    elif criterio == "Alphabet":
+      fig.data[3].visible = True
+    elif criterio == "Ecopetrol":
+      fig.data[4].visible = True
+    elif criterio == "B. de carbono":
+      fig.data[5].visible = True
+
+    # --- Layout general ---
+    fig.update_layout(
+    title=f"Activo seleccionado: {criterio}",
+    xaxis_title="Día",
+    yaxis_title="Retorno logarítmico",
+    barmode="group",
+    height=500)
+
+    # --- Mostrar ---
+    st.plotly_chart(fig, use_container_width=True)
+
+elif seccion_seleccionada == "Portafolios óptimos":
+    st.header("Portafolios Elegidos")
+    tab1, tab2= st.tabs(["**Portafolio de ratio máximo de Sharpe**", "**Portafolio de mínima varianza**"])
+    with tab1:
+      objetos = {
+      "Activos":["Nutresa, ASML, Ecopetrol"],
+      "Pesos": ["0.4825, 0.1244, 0.3931"],
+      "Rendimiento esperado": [0.0012],
+      "Desviación estándar": [0.0102],
+      "Ratio Sharpe": [0.1187],
+      "VaR_95": [-0.0247]}
+      for clave, valor in objetos.items():
+        st.markdown(f"**{clave}:** {valor[0]}")
+    with tab2:
+      objetos_mv = {
+      "Activos": ["Nutresa, Ecopetrol, bonos de carbono"],
+      "Pesos": ["0.5487, 0.0117, 0.4396"],
+      "Rendimiento esperado": [0.0013],
+      "Desviación estándar": [0.0059],
+      "Ratio Sharpe": [0.2240],
+      "VaR_95": [-0.0193]}
+      for clave, valor in objetos_mv.items():
+        st.markdown(f"**{clave}:** {valor[0]}")
+
+elif seccion_seleccionada == "Medidas de calidad y selección del portafolio":
+    st.header("Selección del portafolio")
+    # Datos de los portafolios
+    df_metricas = pd.DataFrame({
+      "Portafolio": ["Máximo Ratio Sharpe", "Mínima Varianza"],
+      "Sortino": [0.0656, 0.0764],
+      "Beta": [0.5669, 0.4747],
+      "TE": [0.0199, 0.0201],
+      "Alfa": [0.0009, 0.0011],
+      "IR": [0.0362, 0.0425]})
+    criterio = st.radio(
+      "Selecciona la medida de calidad:",
+      ["Sortino", "Beta", "TE", "Alfa","IR"],
+      horizontal=True)
+    criterios_max = ["IR", "Sortino", "Alfa"]
+    criterios_min = ["Beta", "TE"]
+    if criterio in ["IR", "Sortino", "Alfa"]:
+      mejor = df_metricas.loc[df_metricas[criterio].idxmax()]
+    else:
+      mejor = df_metricas.loc[df_metricas[criterio].idxmin()]
+    tab1, tab2 = st.tabs(["Mejor portafolio", "Comparación completa"])
+
+    with tab1:
+      st.subheader(f"Portafolio recomendado según {criterio}:")
+      st.success(mejor["Portafolio"])
+
+      st.write("Valor del criterio seleccionado:")
+      st.metric(criterio, round(mejor[criterio], 4))
+
+    with tab2:
+      st.subheader("Comparación completa")
+      st.dataframe(df_metricas.set_index("Portafolio"))
+
+    # --- Crear figura con TODAS las métricas ---
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(x=df_metricas.Portafolio, y=df_metricas.Alfa, name='Alfa', visible=False))
+    fig.add_trace(go.Bar(x=df_metricas.Portafolio, y=df_metricas.Beta, name='Beta', visible=False))
+    fig.add_trace(go.Bar(x=df_metricas.Portafolio, y=df_metricas.Sortino, name='Sortino', visible=False))
+    fig.add_trace(go.Bar(x=df_metricas.Portafolio, y=df_metricas.IR, name='Information Ratio', visible=False))
+    fig.add_trace(go.Bar(x=df_metricas.Portafolio, y=df_metricas.TE, name='Tracking Error', visible=False))
+
+    # --- Control de visibilidad según la selección del radio ---
+    if criterio == "Alfa":
+      fig.data[0].visible = True
+    elif criterio == "Beta":
+      fig.data[1].visible = True
+    elif criterio == "Sortino":
+      fig.data[2].visible = True
+    elif criterio == "IR":
+      fig.data[3].visible = True
+    elif criterio == "TE":
+      fig.data[4].visible = True
+
+    # --- Layout general ---
+    fig.update_layout(
+    title=f"Métrica seleccionada: {criterio}",
+    xaxis_title="Portafolio",
+    yaxis_title="Valor",
+    barmode="group",
+    height=500)
+
+    # --- Mostrar ---
+    st.plotly_chart(fig, use_container_width=True)
+
+elif seccion_seleccionada == "Referencias":
+    st.header("Referencias")
+    Referencias = [
+        "Ospina Arango, M. F. (2019). *Medición del Riesgo de Mercado para un Portafolio de Renta Fija del Mercado Colombiano*.https://repository.unab.edu.co/bitstream/handle/20.500.12749/13650/2019_Tesis_Ospina_Arango_Maria_Fernanda.pdf?sequence=1",
+        "Suaza González, R. A. (2015). *Valor en Riesgo para Diversificación Internacional de Portafolios*. https://bffrepositorio.unal.edu.co/server/api/core/bitstreams/563b60da-8afa-4db6-922a-2f4f422b84f3/content",
+        "García Rodríguez, G. A. (2015). *Mecanismos de Cobertura Cambiaria en el Mercado Colombiano*.https://repositorio.unal.edu.co/items/bb2f2d54-9cc1-4d1a-9876-0605ef550244",
+        "Alarcón, A., Alvarado, Y., \& Arcos, J. (2023). *Análisis financiero y bursátil de Ecopetrol*. https://repository.unad.edu.co/jspui/bitstream/10596/58963/1/aealarcond.pdf",
+        "Lopera, M., González, F., \& Londoño, C. (2013). *Efectos de la política monetaria sobre la valoración de activos en el mercado accionario colombiano (2004-2012)*.http://www.scielo.org.co/scielo.php?script=sci_arttext&pid=S1657-42142013000200008",
+        "Giraldo-Prieto, C., González, G., Vesga, C., \& Ferreira, D. (2017). *Coberturas financieras con derivados y su incidencia en el valor de mercado en empresas colombianas que cotizan en Bolsa*.https://www.scielo.org.mx/scielo.php?pid=S0186-10422017000501553&script=sci_abstract",
+        "Harmstone, A. (2017). *Political Risk: A Tale of Two Cities*.https://www.morganstanley.com/im/publication/insights/macro-insights/mi_taleoftwocities_us.pdf",
+        "Carnaham, D. \& Saeigh, S. (2021). *Political shocks and asset prices*.https://www.cambridge.org/core/journals/political-science-research-and-methods/article/political-shocks-and-asset-prices/B048728DF843C4807B2F78090A080532"
+    ]
+    for obj in Referencias:
+        st.markdown(f"- {obj}")
+
+elif seccion_seleccionada == "Anexo: explicación de las medidas de calidad":
+    st.header("Explicación Medidas de calidad")
+    tab1,tab2,tab3,tab4,tab5 = st.tabs(["Sortino Ratio", "Beta", "Tracking Error","Alfa de Jensen","Ratio de información"])
+    with tab1:
+      st.markdown(r"**Función**:el ratio de Sortino mide la rentabilidad ajustada solo por el riesgo a la baja, a diferencia de Sharpe que penaliza toda la volatilidad.")
+      st.markdown(r"**Fórmula**: $R_{s} = E[R_p - R_f]/S_{d}$")
+      st.markdown(r"Donde:")
+      st.markdown(r"**$R_{s}$**: ratio de Sortino")
+      st.markdown(r"**$R_{p}$**: retorno del portafolio")
+      st.markdown(r"**$R_{f}$**: tasa libre de Riesgo")
+      st.markdown(r"**$S_{d}$**: desviación estándar solo de los retornos negativos")
+      st.markdown("**Criterio de decisión**: se escoge el portafolio con mayor ratio de Sortino.")
+    with tab2:
+      st.markdown(r"**Función**:La Beta mide la sensibilidad del portafolio frente al mercado.")
+      st.markdown(r"**Fórmula**: $B = Cov(R_{p}, R_{m})/Var(R_{m})$")
+      st.markdown(r"Donde:")
+      st.markdown(r"**$B$**: beta")
+      st.markdown(r"**$R_{p}$**: retorno del portafolio")
+      st.markdown(r"**$R_{m}$**: retorno del mercado")
+      st.markdown(r"**Criterio de decisión**: se escoge el portafolio con menor beta.")
+    with tab3:
+      st.markdown(r"**Función**: el Tracking Error mide la volatilidad del **retorno activo** del portafolio.")
+      st.markdown(r"**Fórmula**: $TE = \sigma(R_{p} - R_{m})$")
+      st.markdown(r"Donde:")
+      st.markdown(r"**$TE$**: Tracking Error")
+      st.markdown(r"**$\sigma$**: desviación estándar")
+      st.markdown(r"**$R_{p}$**: retorno del portafolio")
+      st.markdown(r"**$R_{m}$**: retorno del benchmark")
+      st.markdown(r"**Criterio de decisión**: se escoge el portafolio con menor tracking error.")
+    with tab4:
+      st.markdown(r"**Función**:el alfa de Jensen mide cuánto rinde el portafolio por encima de lo esperado según su beta.")
+      st.markdown(r"**Fórmula**: $AJ = R_{p}-[R_{f} + B(R_{m} - R_{f})]$")
+      st.markdown(r"Donde:")
+      st.markdown(r"**$AJ$**: Alfa de Jensen")
+      st.markdown(r"**$B$**: beta del portafolio")
+      st.markdown(r"**$R_{p}$**: retorno del portafolio")
+      st.markdown(r"**$R_{m}$**: retorno del mercado")
+      st.markdown(r"**$R_{f}$**: tasa libre de riesgo")
+      st.markdown("**Criterio de decisión**:selecciona el portafolio con el alfa de Jensen más alto.")
+    with tab5:
+      st.markdown(r"**Función**: el ratio de información mide cuánto rinde el portafolio por encima de lo esperado según su beta.")
+      st.markdown(r"**Fórmula**: $IR =(R_{p} - R_{m})/TE$")
+      st.markdown(r"Donde:")
+      st.markdown(r"**$IR$**: ratio de información")
+      st.markdown(r"**$TE$**: Tracking Error ")
+      st.markdown(r"**$R_{p}$**: retorno del portafolio")
+      st.markdown(r"**$R_{m}$**: retorno del mercado")
+      st.markdown(r"**$(R_{p} - R_{m})$**: Retorno activo")
+      st.markdown(r"**Criterio de decisión**: elige el portafolio con el Information Ratio más alto.")
+
+
+"""
+# Guardar el código Streamlit en un archivo
+with open("/content/streamlit_plotly_timeseries.py", "w") as f:
+    f.write(streamlit_code)
+
+# Establecer el token de autenticación de ngrok
+from pyngrok import ngrok
+ngrok.set_auth_token("2tzdV3oofirn68JeCgolauxDQUt_75mTMJ3ko2AKPPnGaxi9A")
+
+# Crear el túnel de ngrok a Streamlit en el puerto 8501
+public_url = ngrok.connect(8501)
+print(f"Streamlit app is live at: {public_url}")
+
+# Ejecutar la aplicación Streamlit en segundo plano
+!streamlit run /content/streamlit_plotly_timeseries.py &
